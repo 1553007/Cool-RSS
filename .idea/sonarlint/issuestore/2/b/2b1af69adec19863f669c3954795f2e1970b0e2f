@@ -1,0 +1,15 @@
+
+M
+java:S1068"+Remove this unused "LOG_TAG" private field.(€§ââùÿÿÿÿ8±ùÄ¾™.
+X	java:S125X"<This block of commented-out lines of code should be removed.(†ËÀ¹8±ùÄ¾™.
+s	java:S116"RRename this field "LOG_TAG" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(€§ââùÿÿÿÿ8±ùÄ¾™.
+]	java:S125T"<This block of commented-out lines of code should be removed.(·µ»ƒüÿÿÿÿ8±ùÄ¾™.
+O
+java:S1135B"2Complete the task associated to this TODO comment.(ÃÛ ²8±ùÄ¾™.
+]	java:S125_"<This block of commented-out lines of code should be removed.(ó×·÷üÿÿÿÿ8±ùÄ¾™.
+]	java:S125J"<This block of commented-out lines of code should be removed.(šô©ğşÿÿÿÿ8±ùÄ¾™.
+]	java:S125Q"<This block of commented-out lines of code should be removed.(Ô›ˆ±üÿÿÿÿ8±ùÄ¾™.
+W	java:S125D"<This block of commented-out lines of code should be removed.(ÔÏÁ~8±ùÄ¾™.
+\
+java:S1144e":Remove this unused private "onClickExpandableText" method.(Ø¹²šøÿÿÿÿ8±ùÄ¾™.
+X	java:S125L"<This block of commented-out lines of code should be removed.(®ƒ÷8±ùÄ¾™.

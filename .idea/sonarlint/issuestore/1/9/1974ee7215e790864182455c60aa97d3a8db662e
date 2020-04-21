@@ -1,0 +1,21 @@
+
+c
+java:S1192Ê"FDefine a constant instead of duplicating this literal "image" 3 times.(Å÷{8ÃùáÁ™.
+M
+java:S10681"+Remove this unused "LOG_TAG" private field.(€§ââùÿÿÿÿ8ÃùáÁ™.
+~
+java:S14506"\Remove the "mRecyclerView" field and declare it as a local variable in the relevant methods.(Òéıÿÿÿÿ8ÃùáÁ™.
+H
+java:S5411–"*Use the primitive boolean expression here.(èÆßÜ8ÃùáÁ™.
+G
+java:S1068t"*Remove this unused "isDone" private field.(¢¿Ç8ÃùáÁ™.
+i
+java:S1301È"KReplace this "switch" statement by "if" statements to increase readability.(İµß¶8ÃùáÁ™.
+B
+java:S3398¨"$Move this method into "GetFeedTask".(÷¨‹8ÃùáÁ™.
+?	java:S131È""Add a default case to this switch.(İµß¶8ÃùáÁ™.
+S
+java:S1068u"1Remove this unused "mErrorMessage" private field.(ÿÆüßÿÿÿÿÿ8ÃùáÁ™.
+s	java:S1161"RRename this field "LOG_TAG" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(€§ââùÿÿÿÿ8ÃùáÁ™.
+u
+java:S3776²"RRefactor this method to reduce its Cognitive Complexity from 49 to the 15 allowed.(‡ ¨øÿÿÿÿ8ÃùáÁ™.

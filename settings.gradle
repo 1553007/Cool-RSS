@@ -1,0 +1,2 @@
+rootProject.name='Cool RSS'
+include ':app'

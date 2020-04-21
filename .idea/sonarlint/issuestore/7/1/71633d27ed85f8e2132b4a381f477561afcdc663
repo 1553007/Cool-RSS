@@ -1,0 +1,25 @@
+
+E
+java:S16041"(Make this anonymous inner class a lambda(ÅÅàÑ8Œ–­Â™.
+O
+java:S1068"-Remove this unused "viewPager" private field.(åÙ¬Ïûÿÿÿÿ8¹œŸÖ™.
+V
+java:S1068"4Remove this unused "registerFragment" private field.(şƒõüÿÿÿÿ8¹œŸÖ™.
+g	java:S116"RRename this field "LOG_TAG" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Ì¸×©
+K
+java:S1068".Remove this unused "tabAdapter" private field.(›—Ö÷8¹œŸÖ™.
+z
+java:S1450"XRemove the "viewPager" field and declare it as a local variable in the relevant methods.(åÙ¬Ïûÿÿÿÿ8¹œŸÖ™.
+t
+java:S1450"WRemove the "mToolbar" field and declare it as a local variable in the relevant methods.(êˆ‹©8›Äå•˜.
+N
+java:S1068"1Remove this unused "loginFragment" private field.(ü¥£8¹œŸÖ™.
+A
+java:S1068"+Remove this unused "LOG_TAG" private field.(Ì¸×©
+]	java:S1255"<This block of commented-out lines of code should be removed.(ÌÌÖºûÿÿÿÿ8Ÿø³¸˜.
+u
+java:S1450"XRemove the "tabLayout" field and declare it as a local variable in the relevant methods.(¤×ä8¹œŸÖ™.
+X	java:S1257"<This block of commented-out lines of code should be removed.(¡Õ±š8Ÿø³¸˜.
+]	java:S1259"<This block of commented-out lines of code should be removed.(éØ»Úûÿÿÿÿ8Ÿø³¸˜.
+J
+java:S1068"-Remove this unused "tabLayout" private field.(¤×ä8¹œŸÖ™.
