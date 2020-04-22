@@ -5,10 +5,13 @@ package com.example.coolrss.screen.home.detailrssfeed;
  */
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.NetworkOnMainThreadException;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,8 +23,15 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.coolrss.R;
 import com.example.coolrss.adapter.ListRSSItemsAdapter;
+import com.example.coolrss.model.RSSFeed;
 import com.example.coolrss.screen.home.readmore.ReadMoreFragment;
+import com.example.coolrss.utils.RSSUtils;
+import com.example.coolrss.utils.ReturnObj;
 import com.google.android.material.textview.MaterialTextView;
+
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.IOException;
 
 public class DetailRSSFeedFragment extends Fragment {
     private String LOG_TAG = ReadMoreFragment.class.getSimpleName();
@@ -30,6 +40,7 @@ public class DetailRSSFeedFragment extends Fragment {
     private RecyclerView mListItemsRecyclerView;
     private MaterialTextView mTextEmpty;
     private ListRSSItemsAdapter mListRSSItemsAdapter;
+    private RSSFeed mRSSFeed = new RSSFeed();
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -62,10 +73,79 @@ public class DetailRSSFeedFragment extends Fragment {
         mListItemsRecyclerView.setAdapter(mListRSSItemsAdapter);
 
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
-            mSwipeRefreshLayout.setRefreshing(false);
-//            ViewUtils.hideKeyboard(mSearchBoxEditText.getRootView(), mContext);
-//            mSearchBoxEditText.clearFocus();
-//            new GetFeedTask().execute((Void) null);
+            // execute Get feed task if there is a link in RSS feed
+            if (mRSSFeed != null && !mRSSFeed.getLink().isEmpty()) {
+                new GetFeedTask().execute((Void) null);
+            } else {
+                mSwipeRefreshLayout.setRefreshing(false);
+            }
         });
+    }
+
+    public void onReceiveRSSFeed(RSSFeed rssFeed) {
+        setFeed(rssFeed);
+    }
+
+    private void setFeed(RSSFeed feed) {
+        if (feed != null && !feed.getLink().isEmpty()) {
+            mRSSFeed = feed;
+            if (!mRSSFeed.getListRSSItems().isEmpty()) {
+                mTextEmpty.setVisibility(View.INVISIBLE);
+            } else {
+                mTextEmpty.setVisibility(View.VISIBLE);
+            }
+            mListRSSItemsAdapter.setListContent(mRSSFeed.getListRSSItems());
+        }
+    }
+
+    // Perform get feed task in background thread
+    private class GetFeedTask extends AsyncTask<Void, Void, ReturnObj> {
+        private String urlStr;
+        private RSSFeed retRSSFeed = new RSSFeed();
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mSwipeRefreshLayout.setRefreshing(true);
+            urlStr = mRSSFeed.getLink();
+        }
+
+        @Override
+        protected ReturnObj doInBackground(Void... voids) {
+            if (urlStr.isEmpty()) {
+                return new ReturnObj(true, ReturnObj.TYPE.UI_ERROR,
+                        "Enter a valid url");
+            }
+
+            try {
+                if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://"))
+                    urlStr = "https://" + urlStr;
+
+                retRSSFeed = RSSUtils.parseRSSFeedFromURL(urlStr);
+            } catch (NetworkOnMainThreadException | XmlPullParserException | IOException e) {
+                return new ReturnObj(true, ReturnObj.TYPE.EXCEPTION,
+                        e.getMessage());
+            }
+            return new ReturnObj(false);
+        }
+
+        @Override
+        protected void onPostExecute(ReturnObj obj) {
+            super.onPostExecute(obj);
+            if (obj.isError()) {
+                switch (obj.getType()) {
+                    case EXCEPTION:
+                    case UI_ERROR:
+                        Toast.makeText(mContext, obj.getErrorMessage(), Toast.LENGTH_SHORT).show();
+                        break;
+                    case NO_ERROR:
+
+                        break;
+                    default:
+                }
+            }
+            setFeed(retRSSFeed);
+            mSwipeRefreshLayout.setRefreshing(false);
+        }
     }
 }

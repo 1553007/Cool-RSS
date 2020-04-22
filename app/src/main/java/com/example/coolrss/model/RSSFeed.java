@@ -11,6 +11,7 @@ import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Path;
 import org.simpleframework.xml.Root;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Root(name = "rss", strict = false)
@@ -37,7 +38,11 @@ public class RSSFeed {
     private List<RSSItem> listRSSItems;
 
     public RSSFeed() {
-
+        this.title = "";
+        this.image = "";
+        this.link = "";
+        this.description = "";
+        this.listRSSItems = new ArrayList<>();
     }
 
     public RSSFeed(String title, List<RSSItem> listRSSItems) {

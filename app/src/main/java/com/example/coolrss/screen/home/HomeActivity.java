@@ -57,6 +57,7 @@ public class HomeActivity extends AppCompatActivity implements ListRSSFeedsAdapt
         mTabAdapter.addFragment(mHistoryFragment, "History");
 
         mViewPager.setAdapter(mTabAdapter);
+        mViewPager.setOffscreenPageLimit(3);
         mTabLayout.setupWithViewPager(mViewPager);
 
 //        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
@@ -87,7 +88,7 @@ public class HomeActivity extends AppCompatActivity implements ListRSSFeedsAdapt
     // TODO: navigate to Detail RSS Feed Screen : temp
     @Override
     public void onClick(RSSFeed rssFeed) {
-//        onClick(rssFeed);
         mViewPager.setCurrentItem(1);
+        mDetailRSSFeedFragment.onReceiveRSSFeed(rssFeed);
     }
 }

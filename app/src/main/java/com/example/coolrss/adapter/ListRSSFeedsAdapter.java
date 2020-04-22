@@ -88,10 +88,10 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     static class RSSFeedViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        public MaterialTextView title;
-        public MaterialTextView link;
-        public ImageView image;
-        public OnFeedViewHolderClickListener onFeedViewHolderClickListener;
+        MaterialTextView title;
+        MaterialTextView link;
+        ImageView image;
+        OnFeedViewHolderClickListener onFeedViewHolderClickListener;
 
         RSSFeedViewHolder(View itemView) {
             super(itemView);

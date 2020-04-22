@@ -4,19 +4,21 @@ package com.example.coolrss.adapter;
  * Created by dutnguyen on 4/17/2020.
  */
 
-import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.coolrss.R;
 import com.example.coolrss.model.RSSItem;
+import com.example.coolrss.utils.StringUtils;
 import com.google.android.material.textview.MaterialTextView;
 import com.squareup.picasso.Picasso;
 
@@ -49,64 +51,47 @@ public class ListRSSItemsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             final MaterialTextView description = ((RSSItemViewHolder) holder).description;
             final MaterialTextView time = ((RSSItemViewHolder) holder).time;
             final ImageView image = ((RSSItemViewHolder) holder).image;
+
             title.setText(currentItem.getTitle());
             description.setText(currentItem.getDescription());
-            time.setText(currentItem.getPubDate());
+            String timeFormat = StringUtils.formatDateTime(currentItem.getPubDate());
+            if (timeFormat != null) {
+                time.setText(StringUtils.formatDateTime(currentItem.getPubDate()));
+            } else {
+                time.setText(currentItem.getPubDate());
+            }
             if (!currentItem.getImage().isEmpty()) {
                 Picasso.get().load(currentItem.getImage())
                         .placeholder(R.drawable.default_image)
                         .error(R.drawable.default_image)
                         .into(image);
             } else {
-                image.setImageResource(R.drawable.default_image);
+                // set default website image
+                Picasso.get().load(StringUtils.getLogoInWebsite(currentItem.getLink()))
+                        .placeholder(R.drawable.default_image)
+                        .error(R.drawable.default_image)
+                        .into(image);
             }
 
-            ((RSSItemViewHolder) holder).onItemClickListener = position1 -> Toast.makeText(mContext, "onClick RSS Item: " + currentItem.getLink(), Toast.LENGTH_SHORT).show();
-
-            // TODO: Implement "Show more / less" text at the end of description text.
-
-//        String textDescription = description.getText().toString();
-//        if (textDescription.length() > 20) {
-//            textDescription = textDescription.substring(0, 20) + "...";
-//            description.setText(Html.fromHtml(textDescription + "<font color='#3498db'> Show more</font>"));
-//        }
-
-//            description.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    onClickExpandableText(description);
-//                }
-//            });
-
-//            SpannableString ss = new SpannableString("Android is a Software stack");
-//            ClickableSpan clickableSpan = new ClickableSpan() {
-//                @Override
-//                public void onClick(View textView) {
-//                    Toast.makeText(mContext, "Show more/less", Toast.LENGTH_SHORT).show();
-//                }
-//                @Override
-//                public void updateDrawState(TextPaint ds) {
-//                    super.updateDrawState(ds);
-//                    ds.setUnderlineText(false);
-//                }
-//            };
-//            ss.setSpan(clickableSpan, 22, 27, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-//
-//            description.setText(ss);
-//            description.setMovementMethod(LinkMovementMethod.getInstance());
-//            description.setHighlightColor(Color.TRANSPARENT);
+            ((RSSItemViewHolder) holder).onItemClickListener = new RSSItemViewHolder.OnItemClickListener() {
+                @Override
+                public void onClick(int position1) {
+                    startWebView(currentItem.getLink());
+                }
+            };
         }
     }
 
-    private void onClickExpandableText(MaterialTextView textView) {
-        int collapsedMaxLines = 3;
-        if (textView.getMaxLines() == collapsedMaxLines) {
-            ObjectAnimator animation = ObjectAnimator.ofInt(textView, "maxLines", textView.getLineCount());
-            animation.setDuration(200).start();
-        } else {
-            ObjectAnimator animation = ObjectAnimator.ofInt(textView, "maxLines", collapsedMaxLines);
-            animation.setDuration(200).start();
-        }
+    private void startWebView(String urlStr) {
+        Uri uri = Uri.parse(urlStr);
+
+        // create custom tabs intent
+        CustomTabsIntent.Builder intentBuilder = new CustomTabsIntent.Builder();
+        // set toolbar colors
+        intentBuilder.setToolbarColor(ContextCompat.getColor(mContext, R.color.colorPrimary));
+        intentBuilder.setSecondaryToolbarColor(ContextCompat.getColor(mContext, R.color.colorPrimaryDark));
+        CustomTabsIntent customTabsIntent = intentBuilder.build();
+        customTabsIntent.launchUrl(mContext, uri);
     }
 
     @Override
@@ -121,11 +106,11 @@ public class ListRSSItemsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     static class RSSItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        public MaterialTextView title;
-        public MaterialTextView time;
-        public MaterialTextView description;
-        public ImageView image;
-        public OnItemClickListener onItemClickListener;
+        MaterialTextView title;
+        MaterialTextView time;
+        MaterialTextView description;
+        ImageView image;
+        OnItemClickListener onItemClickListener;
 
         RSSItemViewHolder(View itemView) {
             super(itemView);

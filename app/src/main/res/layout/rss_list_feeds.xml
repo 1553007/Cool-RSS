@@ -13,7 +13,6 @@
         android:text="Empty"
         android:textColor="@color/color_black"
         android:textStyle="italic"
-        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

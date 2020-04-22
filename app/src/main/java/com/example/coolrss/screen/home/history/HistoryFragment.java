@@ -21,20 +21,15 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.coolrss.R;
 import com.example.coolrss.adapter.ListRSSFeedsAdapter;
 import com.example.coolrss.screen.home.readmore.ReadMoreFragment;
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 import com.google.android.material.textview.MaterialTextView;
 
 public class HistoryFragment extends Fragment {
     private String LOG_TAG = ReadMoreFragment.class.getSimpleName();
     private Context mContext;
-    private TextInputLayout mSearchBoxInputLayout;
-    private TextInputEditText mSearchBoxEditText;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private RecyclerView mListFeedsRecyclerView;
     private MaterialTextView mTextEmpty;
     private ListRSSFeedsAdapter mListRSSFeedsAdapter;
-
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -45,7 +40,7 @@ public class HistoryFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.rss_list_feeds, container, false);
+        return inflater.inflate(R.layout.history_fragment, container, false);
     }
 
     @Override

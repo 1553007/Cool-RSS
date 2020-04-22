@@ -8,7 +8,6 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.NetworkOnMainThreadException;
-import android.util.Xml;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,20 +24,16 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.coolrss.R;
 import com.example.coolrss.adapter.ListRSSFeedsAdapter;
 import com.example.coolrss.model.RSSFeed;
-import com.example.coolrss.model.RSSItem;
+import com.example.coolrss.utils.RSSUtils;
 import com.example.coolrss.utils.ReturnObj;
-import com.example.coolrss.utils.StringUtils;
 import com.example.coolrss.utils.ViewUtils;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.android.material.textview.MaterialTextView;
 
-import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,7 +56,7 @@ public class ReadMoreFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.add_rss, container, false);
+        return inflater.inflate(R.layout.read_rss_fragment, container, false);
     }
 
     @Override
@@ -100,7 +95,7 @@ public class ReadMoreFragment extends Fragment {
             new GetFeedTask().execute((Void) null);
         });
 
-        mSearchBoxEditText.setText("https://vnexpress.net/rss/the-thao.rss");
+        mSearchBoxEditText.setText("https://vnexpress.net/rss/tin-moi-nhat.rss");
 //        mSearchBoxEditText.setText("https://timesofindia.indiatimes.com/rssfeedstopstories.cms");
     }
 
@@ -108,8 +103,6 @@ public class ReadMoreFragment extends Fragment {
     private class GetFeedTask extends AsyncTask<Void, Void, ReturnObj> {
         private String urlStr;
         private RSSFeed retRSSFeed;
-        private Boolean isDone = false;
-        private String mErrorMessage = "";
 
         @Override
         protected void onPreExecute() {
@@ -130,7 +123,7 @@ public class ReadMoreFragment extends Fragment {
                 if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://"))
                     urlStr = "http://" + urlStr;
 
-                retRSSFeed = parseRSSFeed(urlStr);
+                retRSSFeed = RSSUtils.parseRSSFeedFromURL(urlStr);
             } catch (NetworkOnMainThreadException | XmlPullParserException | IOException e) {
                 return new ReturnObj(true, ReturnObj.TYPE.EXCEPTION,
                         e.getMessage());
@@ -141,7 +134,6 @@ public class ReadMoreFragment extends Fragment {
         @Override
         protected void onPostExecute(ReturnObj obj) {
             super.onPostExecute(obj);
-            mSwipeRefreshLayout.setRefreshing(false);
             if (!obj.isError()) {
                 List<RSSFeed> listRSSFeeds = new ArrayList<>();
                 listRSSFeeds.add(retRSSFeed);
@@ -159,6 +151,7 @@ public class ReadMoreFragment extends Fragment {
                     default:
                 }
             }
+            mSwipeRefreshLayout.setRefreshing(false);
         }
     }
 
@@ -169,79 +162,5 @@ public class ReadMoreFragment extends Fragment {
             mTextEmpty.setVisibility(View.VISIBLE);
         }
         mListRSSFeedsAdapter.setListContent(listItems);
-    }
-
-    // Parse RSS Feed from a URL
-    public RSSFeed parseRSSFeed(String inputURL) throws XmlPullParserException,
-            IOException {
-        RSSFeed rssFeed = new RSSFeed();
-        String title = "";
-        String link = "";
-        String description = "";
-        String image = "";
-        String pubDate = "";
-        String currentTag = "";
-        List<RSSItem> itemList = new ArrayList<>();
-
-        URL url = new URL(inputURL);
-        InputStream inputStream = url.openConnection().getInputStream();
-        try {
-            XmlPullParser parser = Xml.newPullParser();
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-            parser.setInput(inputStream, null);
-
-            int eventType = parser.getEventType();
-            while (eventType != XmlPullParser.END_DOCUMENT) {
-                String name = parser.getName();
-                if (name != null) {
-                    switch (eventType) {
-                        case XmlPullParser.START_TAG:
-                            if (name.equalsIgnoreCase("item") || name.equalsIgnoreCase("image")) {
-                                currentTag = name;
-                            }
-                            if (!currentTag.equalsIgnoreCase("image") && parser.next() == XmlPullParser.TEXT) {
-                                String result = parser.getText();
-                                if (name.equalsIgnoreCase("title")) {
-                                    title = result;
-                                } else if (name.equalsIgnoreCase("description")) {
-                                    image = StringUtils.getImageUrlInString(result);
-                                    if (result.contains("</br>")) {
-                                        description = result.substring(result.indexOf("</br>") + 5);
-                                    } else {
-                                        description = result;
-                                    }
-                                } else if (name.equalsIgnoreCase("link")) {
-                                    link = result;
-                                } else if (name.equalsIgnoreCase("pubDate")) {
-                                    pubDate = result;
-                                }
-                                if (!title.isEmpty() && !description.isEmpty() && !link.isEmpty()) {
-                                    if (currentTag.equalsIgnoreCase("item")) {
-                                        itemList.add(new RSSItem(title, description, link, pubDate, image));
-                                    } else {
-                                        rssFeed.setTitle(title);
-                                        rssFeed.setDescription(description);
-                                        rssFeed.setLink(link);
-                                    }
-                                    title = "";
-                                    link = "";
-                                    description = "";
-                                }
-                            }
-                            break;
-                        case XmlPullParser.END_TAG:
-                            if (name.equalsIgnoreCase("item") || name.equalsIgnoreCase("image")) {
-                                currentTag = "";
-                            }
-                            break;
-                    }
-                }
-                eventType = parser.next();
-            }
-            rssFeed.setListRSSItems(itemList);
-            return rssFeed;
-        } finally {
-            inputStream.close();
-        }
     }
 }
