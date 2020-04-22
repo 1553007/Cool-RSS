@@ -56,7 +56,7 @@ public class RSSItem implements Comparable<RSSItem> {
         return description;
     }
 
-    public String getPubDate() {
+    public String getPubDateStr() {
         return pubDate;
     }
 

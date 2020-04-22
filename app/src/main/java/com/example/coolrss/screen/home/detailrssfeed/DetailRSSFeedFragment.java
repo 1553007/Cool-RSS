@@ -23,10 +23,13 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.coolrss.R;
 import com.example.coolrss.adapter.ListRSSItemsAdapter;
+import com.example.coolrss.dbhelper.AppDatabaseHelper;
+import com.example.coolrss.dbhelper.repository.RSSFeedRepository;
 import com.example.coolrss.model.RSSFeed;
 import com.example.coolrss.screen.home.readmore.ReadMoreFragment;
 import com.example.coolrss.utils.RSSUtils;
 import com.example.coolrss.utils.ReturnObj;
+import com.example.coolrss.utils.StringUtils;
 import com.google.android.material.textview.MaterialTextView;
 
 import org.xmlpull.v1.XmlPullParserException;
@@ -41,11 +44,19 @@ public class DetailRSSFeedFragment extends Fragment {
     private MaterialTextView mTextEmpty;
     private ListRSSItemsAdapter mListRSSItemsAdapter;
     private RSSFeed mRSSFeed = new RSSFeed();
+    private RSSFeedRepository rssFeedRepository;
+    private OnItemsLoadListener onItemsLoadListener;
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mContext = context;
+        try {
+            onItemsLoadListener = (OnItemsLoadListener) mContext;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(mContext.toString() + " must implement DetailRSSFeedFragment.OnItemsLoadListener");
+        }
+        rssFeedRepository = RSSFeedRepository.getInstance(AppDatabaseHelper.getInstance(mContext));
     }
 
     @Nullable
@@ -86,18 +97,6 @@ public class DetailRSSFeedFragment extends Fragment {
         setFeed(rssFeed);
     }
 
-    private void setFeed(RSSFeed feed) {
-        if (feed != null && !feed.getLink().isEmpty()) {
-            mRSSFeed = feed;
-            if (!mRSSFeed.getListRSSItems().isEmpty()) {
-                mTextEmpty.setVisibility(View.INVISIBLE);
-            } else {
-                mTextEmpty.setVisibility(View.VISIBLE);
-            }
-            mListRSSItemsAdapter.setListContent(mRSSFeed.getListRSSItems());
-        }
-    }
-
     // Perform get feed task in background thread
     private class GetFeedTask extends AsyncTask<Void, Void, ReturnObj> {
         private String urlStr;
@@ -118,9 +117,7 @@ public class DetailRSSFeedFragment extends Fragment {
             }
 
             try {
-                if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://"))
-                    urlStr = "https://" + urlStr;
-
+                urlStr = StringUtils.addHttpUrl(urlStr);
                 retRSSFeed = RSSUtils.parseRSSFeedFromURL(urlStr);
             } catch (NetworkOnMainThreadException | XmlPullParserException | IOException e) {
                 return new ReturnObj(true, ReturnObj.TYPE.EXCEPTION,
@@ -147,5 +144,25 @@ public class DetailRSSFeedFragment extends Fragment {
             setFeed(retRSSFeed);
             mSwipeRefreshLayout.setRefreshing(false);
         }
+    }
+
+    private void setFeed(RSSFeed feed) {
+        if (feed != null && !feed.getLink().isEmpty()) {
+            mRSSFeed = feed;
+            if (!mRSSFeed.getListRSSItems().isEmpty()) {
+                mTextEmpty.setVisibility(View.INVISIBLE);
+            } else {
+                mTextEmpty.setVisibility(View.VISIBLE);
+            }
+            mListRSSItemsAdapter.setListContent(mRSSFeed.getListRSSItems());
+            onItemsLoadListener.onListItemsLoad(mRSSFeed);
+            //TODO: update RSS Feed last build date
+            //TODO: add RSS list Items
+        }
+    }
+
+    // RSS Items new load -> update Read more list
+    public interface OnItemsLoadListener {
+        void onListItemsLoad(RSSFeed feed);
     }
 }

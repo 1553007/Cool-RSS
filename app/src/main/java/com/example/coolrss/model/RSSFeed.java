@@ -34,6 +34,10 @@ public class RSSFeed {
     private String description;
 
     @Path("channel")
+    @Element(name = "lastBuildDate")
+    private String lastBuildDate;
+
+    @Path("channel")
     @ElementList(name = "item", inline = true)
     private List<RSSItem> listRSSItems;
 
@@ -42,6 +46,7 @@ public class RSSFeed {
         this.image = "";
         this.link = "";
         this.description = "";
+        lastBuildDate = "";
         this.listRSSItems = new ArrayList<>();
     }
 
@@ -79,11 +84,7 @@ public class RSSFeed {
     }
 
     public void setLink(String link) {
-        String startStr = "http://";
-        if (link.contains("https://")) {
-            startStr = "https://";
-        }
-        this.link = link.replace(startStr, "");
+        this.link = link;
         this.image = StringUtils.getLogoInWebsite(link);
     }
 
@@ -93,5 +94,13 @@ public class RSSFeed {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getLastBuildDateStr() {
+        return lastBuildDate;
+    }
+
+    public void setLastBuildDate(String dateStr) {
+        this.lastBuildDate = dateStr;
     }
 }

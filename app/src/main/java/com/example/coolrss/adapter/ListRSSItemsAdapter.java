@@ -54,11 +54,11 @@ public class ListRSSItemsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             title.setText(currentItem.getTitle());
             description.setText(currentItem.getDescription());
-            String timeFormat = StringUtils.formatDateTime(currentItem.getPubDate());
+            String timeFormat = StringUtils.formatDateTime(currentItem.getPubDateStr());
             if (timeFormat != null) {
-                time.setText(StringUtils.formatDateTime(currentItem.getPubDate()));
+                time.setText(StringUtils.formatDateTime(currentItem.getPubDateStr()));
             } else {
-                time.setText(currentItem.getPubDate());
+                time.setText(currentItem.getPubDateStr());
             }
             if (!currentItem.getImage().isEmpty()) {
                 Picasso.get().load(currentItem.getImage())

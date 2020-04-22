@@ -23,9 +23,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.coolrss.R;
 import com.example.coolrss.adapter.ListRSSFeedsAdapter;
+import com.example.coolrss.dbhelper.AppDatabaseHelper;
+import com.example.coolrss.dbhelper.repository.RSSFeedRepository;
 import com.example.coolrss.model.RSSFeed;
 import com.example.coolrss.utils.RSSUtils;
 import com.example.coolrss.utils.ReturnObj;
+import com.example.coolrss.utils.StringUtils;
 import com.example.coolrss.utils.ViewUtils;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -46,11 +49,19 @@ public class ReadMoreFragment extends Fragment {
     private RecyclerView mListFeedsRecyclerView;
     private MaterialTextView mTextEmpty;
     private ListRSSFeedsAdapter mListRSSFeedsAdapter;
+    private RSSFeedRepository rssFeedRepository;
+    private OnFeedLoadListener onFeedLoadListener;
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mContext = context;
+        try {
+            onFeedLoadListener = (OnFeedLoadListener) mContext;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(mContext.toString() + " must implement ReadMoreFragment.OnFeedLoadListener");
+        }
+        rssFeedRepository = RSSFeedRepository.getInstance(AppDatabaseHelper.getInstance(mContext));
     }
 
     @Nullable
@@ -95,8 +106,9 @@ public class ReadMoreFragment extends Fragment {
             new GetFeedTask().execute((Void) null);
         });
 
+        // TODO: delete fixed RSS link
         mSearchBoxEditText.setText("https://vnexpress.net/rss/tin-moi-nhat.rss");
-//        mSearchBoxEditText.setText("https://timesofindia.indiatimes.com/rssfeedstopstories.cms");
+//        mSearchBoxEditText.setText("https://techcrunch.com/feed");
     }
 
     // Perform get feed task in background thread
@@ -120,9 +132,7 @@ public class ReadMoreFragment extends Fragment {
             }
 
             try {
-                if (!urlStr.startsWith("http://") && !urlStr.startsWith("https://"))
-                    urlStr = "http://" + urlStr;
-
+                urlStr = StringUtils.addHttpUrl(urlStr);
                 retRSSFeed = RSSUtils.parseRSSFeedFromURL(urlStr);
             } catch (NetworkOnMainThreadException | XmlPullParserException | IOException e) {
                 return new ReturnObj(true, ReturnObj.TYPE.EXCEPTION,
@@ -137,6 +147,7 @@ public class ReadMoreFragment extends Fragment {
             if (!obj.isError()) {
                 List<RSSFeed> listRSSFeeds = new ArrayList<>();
                 listRSSFeeds.add(retRSSFeed);
+                rssFeedRepository.add(listRSSFeeds);
                 setList(listRSSFeeds);
             } else {
                 switch (obj.getType()) {
@@ -162,5 +173,17 @@ public class ReadMoreFragment extends Fragment {
             mTextEmpty.setVisibility(View.VISIBLE);
         }
         mListRSSFeedsAdapter.setListContent(listItems);
+        onFeedLoadListener.onFeedLoad();
+    }
+
+    public void onRefresh(RSSFeed feed) {
+        List<RSSFeed> listRSSFeeds = new ArrayList<>();
+        listRSSFeeds.add(feed);
+        setList(listRSSFeeds);
+    }
+
+    // RSS Feed new load -> update History list
+    public interface OnFeedLoadListener {
+        void onFeedLoad();
     }
 }

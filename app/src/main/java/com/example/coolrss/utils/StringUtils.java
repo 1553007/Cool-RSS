@@ -12,6 +12,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StringUtils {
+    private final static SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+    private final static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("d MMM yyyy");
+    private final static SimpleDateFormat sqlDateFormat = new SimpleDateFormat("yyyy/MM/DDD.HH:mm:ss.Z");
+
     // extract any image url from a string
     public static String getImageUrlInString(String inputStr) {
         String regex = "https?:/(?:/[^/]+)+\\.(?:jpg|gif|png)";
@@ -25,23 +29,33 @@ public class StringUtils {
 
     // get Logo of a website using free API clearbit
     public static String getLogoInWebsite(String webUrl) {
-        String startStr = "http://";
-        if (webUrl.contains("https://")) {
-            startStr = "https://";
-        }
-        webUrl = webUrl.replace(startStr, "");
+        webUrl = removeHttpInUrl(webUrl);
         if (webUrl.indexOf("/") > 0) {
             webUrl = webUrl.substring(0, webUrl.indexOf("/"));
         }
         return "http://logo.clearbit.com/" + webUrl;
     }
 
+    public static String removeHttpInUrl(String inputStr) {
+        String startStr = "http://";
+        if (inputStr.contains("https://")) {
+            startStr = "https://";
+        }
+        return inputStr.replace(startStr, "");
+    }
+
+    public static String addHttpUrl(String inputStr) {
+        String outputStr = inputStr;
+        if (!inputStr.startsWith("http://") && !inputStr.startsWith("https://"))
+            outputStr = "https://" + inputStr;
+        return outputStr;
+    }
+
     // get date time format like "2m", "1h", ...
     public static String formatDateTime(String datetimeStr) {
         Date date = Calendar.getInstance().getTime();
         try {
-            SimpleDateFormat originFotmat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
-            date = originFotmat.parse(datetimeStr);
+            date = dateFormat.parse(datetimeStr);
         } catch (ParseException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -65,10 +79,39 @@ public class StringUtils {
             } else if (hours < 48) {
                 return "Yesterday";
             } else {
-                SimpleDateFormat convertFormat = new SimpleDateFormat("d MMM yyyy");
-                return convertFormat.format(date);
+                return simpleDateFormat.format(date);
             }
         }
         return null;
+    }
+
+    // generate String from date with format
+    public static String getStringFromDate(Date date) {
+        return dateFormat.format(date);
+    }
+
+    // generate date from String with format
+    public static Date getDateFromString(String inputStr) {
+        try {
+            return dateFormat.parse(inputStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return Calendar.getInstance().getTime();
+    }
+
+    // generate String from date for save date time data in sql table
+    public static String getSQLStringFromDate(Date date) {
+        return sqlDateFormat.format(date);
+    }
+
+    // generate date from String with format
+    public static Date getDateFromSQLString(String inputStr) {
+        try {
+            return sqlDateFormat.parse(inputStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return Calendar.getInstance().getTime();
     }
 }

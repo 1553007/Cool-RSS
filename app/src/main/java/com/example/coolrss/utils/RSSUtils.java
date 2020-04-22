@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class RSSUtils {
@@ -70,10 +71,13 @@ public class RSSUtils {
                                         rssFeed.setTitle(title);
                                         rssFeed.setDescription(description);
                                         rssFeed.setLink(link);
+                                        rssFeed.setLastBuildDate(StringUtils.getStringFromDate(Calendar.getInstance().getTime()));
                                     }
                                     title = "";
                                     link = "";
                                     description = "";
+                                    pubDate = "";
+                                    image = "";
                                 }
                             }
                             break;

@@ -45,9 +45,22 @@
         android:maxLines="1"
         android:text="vnexpress.vn"
         android:textColor="@color/color_description"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/temp_time_feed"
         app:layout_constraintEnd_toEndOf="@id/title_feed"
         app:layout_constraintStart_toStartOf="@id/title_feed"
-        app:layout_constraintTop_toBottomOf="@id/title_feed" />
+        app:layout_constraintTop_toBottomOf="@id/title_feed"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/temp_time_feed"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:text="time"
+        android:textColor="@color/color_description"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/link_feed"
+        app:layout_constraintStart_toStartOf="@id/link_feed"
+        app:layout_constraintTop_toBottomOf="@id/link_feed" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

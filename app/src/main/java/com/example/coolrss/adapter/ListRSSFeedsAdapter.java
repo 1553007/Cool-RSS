@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.coolrss.R;
 import com.example.coolrss.model.RSSFeed;
+import com.example.coolrss.utils.StringUtils;
 import com.google.android.material.textview.MaterialTextView;
 import com.squareup.picasso.Picasso;
 
@@ -52,9 +53,11 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             final MaterialTextView title = ((RSSFeedViewHolder) holder).title;
             final MaterialTextView link = ((RSSFeedViewHolder) holder).link;
             final ImageView image = ((RSSFeedViewHolder) holder).image;
+            final MaterialTextView time = ((RSSFeedViewHolder) holder).time;
+            time.setText(currentItem.getLastBuildDateStr());
 
             title.setText(currentItem.getTitle());
-            link.setText(currentItem.getLink());
+            link.setText(StringUtils.removeHttpInUrl(currentItem.getLink()));
             if (!currentItem.getImage().isEmpty()) {
                 Picasso.get().load(currentItem.getImage())
                         .placeholder(R.drawable.default_image)
@@ -91,6 +94,7 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         MaterialTextView title;
         MaterialTextView link;
         ImageView image;
+        MaterialTextView time;
         OnFeedViewHolderClickListener onFeedViewHolderClickListener;
 
         RSSFeedViewHolder(View itemView) {
@@ -98,6 +102,7 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             title = itemView.findViewById(R.id.title_feed);
             link = itemView.findViewById(R.id.link_feed);
             image = itemView.findViewById(R.id.image_feed);
+            time = itemView.findViewById(R.id.temp_time_feed);
 
             // set item on click listener
             itemView.setOnClickListener(this);

@@ -20,8 +20,13 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.coolrss.R;
 import com.example.coolrss.adapter.ListRSSFeedsAdapter;
+import com.example.coolrss.dbhelper.AppDatabaseHelper;
+import com.example.coolrss.dbhelper.repository.RSSFeedRepository;
+import com.example.coolrss.model.RSSFeed;
 import com.example.coolrss.screen.home.readmore.ReadMoreFragment;
 import com.google.android.material.textview.MaterialTextView;
+
+import java.util.List;
 
 public class HistoryFragment extends Fragment {
     private String LOG_TAG = ReadMoreFragment.class.getSimpleName();
@@ -30,11 +35,13 @@ public class HistoryFragment extends Fragment {
     private RecyclerView mListFeedsRecyclerView;
     private MaterialTextView mTextEmpty;
     private ListRSSFeedsAdapter mListRSSFeedsAdapter;
+    private RSSFeedRepository rssFeedRepository;
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mContext = context;
+        rssFeedRepository = RSSFeedRepository.getInstance(AppDatabaseHelper.getInstance(mContext));
     }
 
     @Nullable
@@ -63,9 +70,21 @@ public class HistoryFragment extends Fragment {
 
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             mSwipeRefreshLayout.setRefreshing(false);
-//            ViewUtils.hideKeyboard(mSearchBoxEditText.getRootView(), mContext);
-//            mSearchBoxEditText.clearFocus();
-//            new GetFeedTask().execute((Void) null);
         });
+        onRefresh();
+    }
+
+    private void setList(List<RSSFeed> listItems) {
+        if (!listItems.isEmpty()) {
+            mTextEmpty.setVisibility(View.INVISIBLE);
+        } else {
+            mTextEmpty.setVisibility(View.VISIBLE);
+        }
+        mListRSSFeedsAdapter.setListContent(listItems);
+    }
+
+    public void onRefresh() {
+        List<RSSFeed> listFeeds = rssFeedRepository.getAll();
+        setList(listFeeds);
     }
 }
