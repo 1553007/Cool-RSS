@@ -35,6 +35,14 @@ public class RSSFeedRepository {
         sqLiteOpenHelper = databaseHelper;
     }
 
+    // add list of RSS Feeds into db
+    public void add(Iterable<RSSFeed> listFeeds) {
+        for (RSSFeed feed : listFeeds) {
+            add(feed);
+        }
+    }
+
+    // add a RSS Feed into db
     public void add(RSSFeed feed) {
         SQLiteDatabase db = sqLiteOpenHelper.getWritableDatabase();
         db.beginTransaction();
@@ -59,8 +67,9 @@ public class RSSFeedRepository {
                 long retId = db.insert(AppDatabaseHelper.RSSFeedTable.TABLE_NAME, null, values);
                 if (retId != -1) {
                     // TODO: add list
+                    isSuccess = true;
                     RSSItemRepository repository = RSSItemRepository.getInstance((AppDatabaseHelper) sqLiteOpenHelper);
-                    isSuccess = repository.addListItems(feed.getListRSSItems(), Long.toString(retId));
+                    repository.add(feed.getListRSSItems(), Long.toString(retId));
                 }
             }
             if (isSuccess) {
@@ -71,13 +80,34 @@ public class RSSFeedRepository {
         }
     }
 
-    public void add(Iterable<RSSFeed> listFeeds) {
-        for (RSSFeed feed : listFeeds) {
-            add(feed);
+    // update a RSS Feed with a specific id
+    public void update(RSSFeed feed, int rowId) {
+        SQLiteDatabase db = sqLiteOpenHelper.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            ContentValues values = new ContentValues();
+            values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_TITLE, feed.getTitle());
+            values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_LINK, feed.getLink());
+            values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_IMAGE, feed.getImage());
+            values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_DESCRIPTION, feed.getDescription());
+
+            // convert date from Object format to SQL format
+            String dateStrOfFeed = feed.getLastBuildDateStr();
+            Date dateOfFeed = StringUtils.getDateFromString(dateStrOfFeed);
+            String dateSQLStrOfFeed = StringUtils.getSQLStringFromDate(dateOfFeed);
+            values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE, dateSQLStrOfFeed);
+
+            db.update(AppDatabaseHelper.RSSFeedTable.TABLE_NAME, values, AppDatabaseHelper.RSSFeedTable.COLUMN_ID + " = ?", new String[]{Integer.toString(rowId)});
+            // TODO: add list
+            RSSItemRepository repository = RSSItemRepository.getInstance((AppDatabaseHelper) sqLiteOpenHelper);
+            repository.add(feed.getListRSSItems(), Integer.toString(rowId));
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
         }
     }
 
-    // Check if there is any RSS feed with a link and created before input RSS feed
+    // Check if there is any RSS feed with a specific link and created before input RSS feed
     public int isExistFeed(RSSFeed feed) {
         SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
         try {
@@ -102,28 +132,27 @@ public class RSSFeedRepository {
         return -1;
     }
 
-    public void update(RSSFeed feed, int rowId) {
-        SQLiteDatabase db = sqLiteOpenHelper.getWritableDatabase();
-        db.beginTransaction();
-        try {
-            ContentValues values = new ContentValues();
-            values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_TITLE, feed.getTitle());
-            values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_IMAGE, feed.getImage());
-            values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_DESCRIPTION, feed.getDescription());
-
-            // convert date from Object format to SQL format
-            String dateStrOfFeed = feed.getLastBuildDateStr();
-            Date dateOfFeed = StringUtils.getDateFromString(dateStrOfFeed);
-            String dateSQLStrOfFeed = StringUtils.getSQLStringFromDate(dateOfFeed);
-            values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE, dateSQLStrOfFeed);
-            db.update(AppDatabaseHelper.RSSFeedTable.TABLE_NAME, values, AppDatabaseHelper.RSSFeedTable.COLUMN_ID + " = ?", new String[]{Integer.toString(rowId)});
-            // TODO: add list
-            RSSItemRepository repository = RSSItemRepository.getInstance((AppDatabaseHelper) sqLiteOpenHelper);
-            boolean isSuccess = repository.addListItems(feed.getListRSSItems(), Integer.toString(rowId));
-            db.setTransactionSuccessful();
-        } finally {
-            db.endTransaction();
+    // get list of all RSS Feed in db
+    public List<RSSFeed> getAll() {
+        List<RSSFeed> listFeeds = new ArrayList<>();
+        SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
+        String query = "SELECT * FROM " + AppDatabaseHelper.RSSFeedTable.TABLE_NAME +
+                " ORDER BY " + AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE + " DESC";
+        Cursor cursor = db.rawQuery(query, null);
+        if (cursor.getCount() <= 0) {
+            cursor.close();
+            return listFeeds;
         }
+        if (cursor.moveToFirst()) {
+            do {
+                RSSFeed feed = null;
+                feed = getFeedFromCursor(cursor);
+                if (feed != null)
+                    listFeeds.add(feed);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return listFeeds;
     }
 
     public boolean isEmpty() {
@@ -165,6 +194,7 @@ public class RSSFeedRepository {
         String imageValue = cursor.getString(cursor.getColumnIndex(AppDatabaseHelper.RSSFeedTable.COLUMN_IMAGE));
         String descriptionValue = cursor.getString(cursor.getColumnIndex(AppDatabaseHelper.RSSFeedTable.COLUMN_DESCRIPTION));
         String dateValue = cursor.getString(cursor.getColumnIndex(AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE));
+
         RSSItemRepository repository = RSSItemRepository.getInstance((AppDatabaseHelper) sqLiteOpenHelper);
         List<RSSItem> listItems = new ArrayList<>(repository.getListItems(idValue));
         RSSFeed feed = new RSSFeed();
@@ -179,28 +209,5 @@ public class RSSFeedRepository {
         feed.setLastBuildDate(dateStrOfFeed);
         feed.setListRSSItems(listItems);
         return feed;
-    }
-
-    public List<RSSFeed> getAll() {
-        List<RSSFeed> listFeeds = new ArrayList<RSSFeed>();
-        SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
-        String query = "SELECT * FROM " + AppDatabaseHelper.RSSFeedTable.TABLE_NAME +
-                " ORDER BY " + AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE + " DESC";
-        // TODO: sort by clicked date time
-        Cursor cursor = db.rawQuery(query, null);
-        if (cursor.getCount() <= 0) {
-            cursor.close();
-            return listFeeds;
-        }
-        if (cursor.moveToFirst()) {
-            do {
-                RSSFeed feed = null;
-                feed = getFeedFromCursor(cursor);
-                if (feed != null)
-                    listFeeds.add(feed);
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        return listFeeds;
     }
 }

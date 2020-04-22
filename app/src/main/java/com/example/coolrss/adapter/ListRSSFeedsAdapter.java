@@ -54,7 +54,7 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             final MaterialTextView link = ((RSSFeedViewHolder) holder).link;
             final ImageView image = ((RSSFeedViewHolder) holder).image;
             final MaterialTextView time = ((RSSFeedViewHolder) holder).time;
-            time.setText(currentItem.getLastBuildDateStr());
+
 
             title.setText(currentItem.getTitle());
             link.setText(StringUtils.removeHttpInUrl(currentItem.getLink()));
@@ -66,17 +66,19 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             } else {
                 image.setImageResource(R.drawable.default_image);
             }
+            // format date time
+            String timeFormat = StringUtils.getStringNoZone(currentItem.getLastBuildDateStr());
+            if (timeFormat != null) {
+                time.setText("Last update: " + timeFormat);
+            } else {
+                time.setText("Last update: " + currentItem.getLastBuildDateStr());
+            }
 
             ((RSSFeedViewHolder) holder).onFeedViewHolderClickListener = positionClicked -> {
                 // send RSS Feed data to listener
                 onFeedClickListener.onClick(listRSSFeeds.get(positionClicked));
             };
         }
-    }
-
-    // RSS Feed click listener
-    public interface OnFeedItemClickListener {
-        void onClick(RSSFeed rssFeed);
     }
 
     @Override
@@ -117,5 +119,10 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         interface OnFeedViewHolderClickListener {
             void onClick(int position);
         }
+    }
+
+    // RSS Feed clicked listener
+    public interface OnFeedItemClickListener {
+        void onClick(RSSFeed rssFeed);
     }
 }

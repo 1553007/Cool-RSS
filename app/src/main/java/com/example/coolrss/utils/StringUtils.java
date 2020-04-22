@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 
 public class StringUtils {
     private final static SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+    private final static SimpleDateFormat dateFormat_noZone = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss");
     private final static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("d MMM yyyy");
     private final static SimpleDateFormat sqlDateFormat = new SimpleDateFormat("yyyy/MM/DDD.HH:mm:ss.Z");
 
@@ -52,12 +53,11 @@ public class StringUtils {
     }
 
     // get date time format like "2m", "1h", ...
-    public static String formatDateTime(String datetimeStr) {
+    public static String getDiffDateTime(String datetimeStr) {
         Date date = Calendar.getInstance().getTime();
         try {
             date = dateFormat.parse(datetimeStr);
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         Long inputTimeMillis = date.getTime();
@@ -88,6 +88,12 @@ public class StringUtils {
     // generate String from date with format
     public static String getStringFromDate(Date date) {
         return dateFormat.format(date);
+    }
+
+    // generate String from date with format no Zone
+    public static String getStringNoZone(String dateStringWithZone) {
+        Date dateWithZone = getDateFromString(dateStringWithZone);
+        return dateFormat_noZone.format(dateWithZone);
     }
 
     // generate date from String with format

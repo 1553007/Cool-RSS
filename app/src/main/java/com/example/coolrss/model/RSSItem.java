@@ -35,14 +35,6 @@ public class RSSItem implements Comparable<RSSItem> {
         this.pubDate = pubDate;
     }
 
-//    public RSSItem(String title, String link, String description, String image, String pubDate) {
-//        this.title = title;
-//        this.link = link;
-//        this.description = description;
-//        this.image = image;
-//        this.pubDate = pubDate;
-//    }
-
     @Override
     public int compareTo(RSSItem o) {
         return title.compareTo(o.title);

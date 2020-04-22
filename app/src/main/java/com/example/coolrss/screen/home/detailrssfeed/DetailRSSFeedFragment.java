@@ -161,7 +161,7 @@ public class DetailRSSFeedFragment extends Fragment {
         }
     }
 
-    // RSS Items new load -> update Read more list
+    // list RSS Items new load listener
     public interface OnItemsLoadListener {
         void onListItemsLoad(RSSFeed feed);
     }

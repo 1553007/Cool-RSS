@@ -58,6 +58,7 @@ public class AppDatabaseHelper extends SQLiteOpenHelper {
         public static final String COLUMN_LINK = "link";
         public static final String COLUMN_IMAGE = "image";
         public static final String COLUMN_DESCRIPTION = "description";
+        // COLUMN_PUBLIC_DATE: follow specific format to compare this column of other RSS Item
         public static final String COLUMN_PUBLIC_DATE = "public_date";
         public static final String COLUMN_RSS_FEED_ID = "rss_feed_id";
     }

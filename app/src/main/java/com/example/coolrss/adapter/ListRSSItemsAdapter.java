@@ -54,12 +54,6 @@ public class ListRSSItemsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             title.setText(currentItem.getTitle());
             description.setText(currentItem.getDescription());
-            String timeFormat = StringUtils.formatDateTime(currentItem.getPubDateStr());
-            if (timeFormat != null) {
-                time.setText(StringUtils.formatDateTime(currentItem.getPubDateStr()));
-            } else {
-                time.setText(currentItem.getPubDateStr());
-            }
             if (!currentItem.getImage().isEmpty()) {
                 Picasso.get().load(currentItem.getImage())
                         .placeholder(R.drawable.default_image)
@@ -71,6 +65,13 @@ public class ListRSSItemsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         .placeholder(R.drawable.default_image)
                         .error(R.drawable.default_image)
                         .into(image);
+            }
+            // format date time to show diff to current time
+            String timeFormat = StringUtils.getDiffDateTime(currentItem.getPubDateStr());
+            if (timeFormat != null) {
+                time.setText(timeFormat);
+            } else {
+                time.setText(currentItem.getPubDateStr());
             }
 
             ((RSSItemViewHolder) holder).onItemClickListener = new RSSItemViewHolder.OnItemClickListener() {
