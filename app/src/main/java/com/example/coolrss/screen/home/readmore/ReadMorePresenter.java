@@ -57,6 +57,7 @@ public class ReadMorePresenter {
 
         @Override
         protected ReturnObj doInBackground(Void... voids) {
+            retListFeeds = new ArrayList<>();
             if (urlStr.isEmpty()) {
                 return new ReturnObj(ReturnObj.TYPE.UI_ERROR, "Please enter a valid url");
             }
@@ -67,7 +68,6 @@ public class ReadMorePresenter {
                 RSSFeed retRSSFeed = RSSUtils.parseRSSFeedFromURL(urlStr);
                 // add feed into db if get successful
                 rssFeedRepository.add(retRSSFeed);
-                retListFeeds = new ArrayList<>();
                 retListFeeds.add(retRSSFeed);
             } catch (XmlPullParserException | IOException e) {
                 // if an exception occurs -> load list RSS feeds in db
