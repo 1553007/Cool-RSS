@@ -104,7 +104,7 @@ public class ReadMoreFragment extends Fragment
         });
 
         // TODO: delete fixed RSS link
-        mSearchBoxEditText.setText("https://vnexpress.net/rss/tin-moi-nhat.rss");
+//        mSearchBoxEditText.setText("https://vnexpress.net/rss/tin-moi-nhat.rss");
     }
 
     // update current list
