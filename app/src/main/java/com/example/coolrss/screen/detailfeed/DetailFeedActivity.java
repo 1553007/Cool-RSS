@@ -7,7 +7,6 @@ package com.example.coolrss.screen.detailfeed;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,11 +15,14 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.example.coolrss.R;
 import com.example.coolrss.screen.home.HomeActivity;
+import com.google.android.material.textview.MaterialTextView;
 
-public class DetailFeedActivity extends AppCompatActivity implements DetailRSSFeedFragment.OnListUpdateListener {
+public class DetailFeedActivity extends AppCompatActivity
+        implements DetailFeedFragment.OnListUpdateListener, DetailFeedFragment.OnGetFeedTitleListener {
     private String LOG_TAG = HomeActivity.class.getSimpleName();
     private Toolbar mToolbar;
-    private DetailRSSFeedFragment mDetailRSSFeedFragment;
+    private MaterialTextView mToolbarTitle;
+    private DetailFeedFragment mDetailFeedFragment;
     private boolean isFeedUpdated = false;
 
     @Override
@@ -33,31 +35,42 @@ public class DetailFeedActivity extends AppCompatActivity implements DetailRSSFe
 
     private void setupToolbar() {
         mToolbar = findViewById(R.id.toolbar);
+        mToolbarTitle = findViewById(R.id.toolbar_title);
         setSupportActionBar(mToolbar);
-        // TODO: add back button top left toolbar
+        // add back button top left toolbar
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         mToolbar.setNavigationIcon(getDrawable(R.drawable.back_icon_white));
-        mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent returnIntent = new Intent();
-                returnIntent.putExtra("isFeedUpdated", isFeedUpdated);
-                setResult(Activity.RESULT_OK, returnIntent);
-                onBackPressed();
-            }
-        });
+        mToolbar.setNavigationOnClickListener(v -> onBackPressed());
     }
 
     private void initViews() {
-        String fragmentTag = DetailRSSFeedFragment.class.getSimpleName();
+        String fragmentTag = DetailFeedFragment.class.getSimpleName();
         String feedLink = getIntent().getStringExtra("DETAIL_FEED_LINK");
-        mDetailRSSFeedFragment = new DetailRSSFeedFragment(feedLink);
+        mDetailFeedFragment = new DetailFeedFragment(feedLink);
+        new DetailFeedPresenter(mDetailFeedFragment, this);
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-        fragmentTransaction.add(R.id.fragment_container, mDetailRSSFeedFragment, fragmentTag).commit();
+        fragmentTransaction.add(R.id.fragment_container, mDetailFeedFragment, fragmentTag).commit();
     }
 
+    // listen list update from Detail RSS Feed Fragment
     @Override
     public void onListUpdate() {
         isFeedUpdated = true;
+    }
+
+    // send data when user press back button
+    @Override
+    public void onBackPressed() {
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("isFeedUpdated", isFeedUpdated);
+        setResult(Activity.RESULT_OK, returnIntent);
+        super.onBackPressed();
+    }
+
+    // listen feed title from Detail RSS Feed Fragment
+    @Override
+    public void getTitle(String title) {
+        // Change toolbar title ~ Feed title
+        mToolbarTitle.setText(title);
     }
 }

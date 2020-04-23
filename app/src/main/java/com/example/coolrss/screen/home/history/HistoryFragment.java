@@ -5,11 +5,11 @@ package com.example.coolrss.screen.home.history;
  */
 
 import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,31 +21,27 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.coolrss.R;
 import com.example.coolrss.adapter.ListRSSFeedsAdapter;
-import com.example.coolrss.dbhelper.AppDatabaseHelper;
-import com.example.coolrss.dbhelper.repository.RSSFeedRepository;
 import com.example.coolrss.model.RSSFeed;
 import com.example.coolrss.screen.home.readmore.ReadMoreFragment;
 import com.example.coolrss.utils.ReturnObj;
 import com.google.android.material.textview.MaterialTextView;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class HistoryFragment extends Fragment {
+public class HistoryFragment extends Fragment
+        implements HistoryView, OnHistoryViewUpdateListener {
     private String LOG_TAG = ReadMoreFragment.class.getSimpleName();
     private Context mContext;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private RecyclerView mListFeedsRecyclerView;
     private MaterialTextView mTextEmpty;
     private ListRSSFeedsAdapter mListRSSFeedsAdapter;
-    private RSSFeedRepository rssFeedRepository;
+    private HistoryPresenter mHistoryPresenter;
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mContext = context;
-        // get db instance for update RSS feeds
-        rssFeedRepository = RSSFeedRepository.getInstance(AppDatabaseHelper.getInstance(mContext));
     }
 
     @Nullable
@@ -88,45 +84,44 @@ public class HistoryFragment extends Fragment {
     }
 
     public void onRefresh() {
-        new GetFeedTask().execute((Void) null);
+        mHistoryPresenter.getListFeedsHistory(this);
     }
 
-    // Perform get feed task in background thread
-    private class GetFeedTask extends AsyncTask<Void, Void, ReturnObj> {
-        private List<RSSFeed> retListFeeds;
+    @Override
+    public void setPresenter(HistoryPresenter presenter) {
+        mHistoryPresenter = presenter;
+    }
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            mSwipeRefreshLayout.setRefreshing(true);
-        }
+    @Override
+    public void start() {
+        mSwipeRefreshLayout.setRefreshing(true);
+    }
 
-        @Override
-        protected ReturnObj doInBackground(Void... voids) {
-            // get list of all RSS feeds accessed from db
-            retListFeeds = new ArrayList<>(rssFeedRepository.getAll());
-            return new ReturnObj();
-        }
+    @Override
+    public void stop(ReturnObj retObject) {
+        if (retObject.isError()) {
+            switch (retObject.getType()) {
+                case ERROR_EXCEPTION:
+                    // handle exception error
+                case UI_ERROR:
+                    // show error message
+                    break;
+                case NO_ERROR:
 
-        @Override
-        protected void onPostExecute(ReturnObj returnObj) {
-            super.onPostExecute(returnObj);
-            if (!returnObj.isError()) {
-                setList(retListFeeds);
-            } else {
-                switch (returnObj.getType()) {
-                    case ERROR_EXCEPTION:
-                        // handle exception error
-                    case UI_ERROR:
-                        // show error message
-                        break;
-                    case NO_ERROR:
-
-                        break;
-                    default:
-                }
+                    break;
+                default:
             }
-            mSwipeRefreshLayout.setRefreshing(false);
         }
+        mSwipeRefreshLayout.setRefreshing(false);
+    }
+
+    @Override
+    public void onSuccess(List<RSSFeed> rssFeedList) {
+        setList(rssFeedList);
+    }
+
+    @Override
+    public void onFailure(String errorMessage) {
+        Toast.makeText(mContext, errorMessage, Toast.LENGTH_SHORT).show();
     }
 }

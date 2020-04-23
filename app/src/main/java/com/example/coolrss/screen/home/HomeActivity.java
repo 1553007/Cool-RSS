@@ -18,7 +18,9 @@ import com.example.coolrss.adapter.ListRSSFeedsAdapter;
 import com.example.coolrss.adapter.TabAdapter;
 import com.example.coolrss.screen.detailfeed.DetailFeedActivity;
 import com.example.coolrss.screen.home.history.HistoryFragment;
+import com.example.coolrss.screen.home.history.HistoryPresenter;
 import com.example.coolrss.screen.home.readmore.ReadMoreFragment;
+import com.example.coolrss.screen.home.readmore.ReadMorePresenter;
 import com.google.android.material.tabs.TabLayout;
 
 public class HomeActivity extends AppCompatActivity
@@ -51,8 +53,10 @@ public class HomeActivity extends AppCompatActivity
 
         mTabAdapter = new TabAdapter(getSupportFragmentManager(), FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
         mReadMoreFragment = new ReadMoreFragment();
+        new ReadMorePresenter(mReadMoreFragment, this);
         mTabAdapter.addFragment(mReadMoreFragment, "Read more");
         mHistoryFragment = new HistoryFragment();
+        new HistoryPresenter(mHistoryFragment, this);
         mTabAdapter.addFragment(mHistoryFragment, "History");
 
         mViewPager.setAdapter(mTabAdapter);
