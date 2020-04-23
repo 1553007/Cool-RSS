@@ -10,6 +10,8 @@ A simple Android application for reading RSS (Really Simple Syndication).
 * Mostly focused on VnExpress RSS (https://vnexpress.net/rss)
 * _Updating_
 
+### Release beta app
+App can be found at: _/build_app/cool-rss-beta-v1.0.apk_ or [this link](/build_app/cool-rss-beta-v1.0.apk)
 ### Screenshots
 
 <div styles="display:inline;">
