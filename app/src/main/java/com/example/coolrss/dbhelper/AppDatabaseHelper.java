@@ -61,6 +61,7 @@ public class AppDatabaseHelper extends SQLiteOpenHelper {
         // COLUMN_PUBLIC_DATE: follow specific format to compare this column of other RSS Item
         public static final String COLUMN_PUBLIC_DATE = "public_date";
         public static final String COLUMN_RSS_FEED_ID = "rss_feed_id";
+        public static final String LIMIT_RECORDS = "50";
     }
 
     @Override

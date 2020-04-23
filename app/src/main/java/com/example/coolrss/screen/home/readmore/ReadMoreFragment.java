@@ -7,11 +7,11 @@ package com.example.coolrss.screen.home.readmore;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.NetworkOnMainThreadException;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,6 +26,7 @@ import com.example.coolrss.adapter.ListRSSFeedsAdapter;
 import com.example.coolrss.dbhelper.AppDatabaseHelper;
 import com.example.coolrss.dbhelper.repository.RSSFeedRepository;
 import com.example.coolrss.model.RSSFeed;
+import com.example.coolrss.utils.PermissionUtils;
 import com.example.coolrss.utils.RSSUtils;
 import com.example.coolrss.utils.ReturnObj;
 import com.example.coolrss.utils.StringUtils;
@@ -56,11 +57,13 @@ public class ReadMoreFragment extends Fragment {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mContext = context;
+        // prepare listener when a new feed is loaded
         try {
             onFeedLoadListener = (OnFeedLoadListener) mContext;
         } catch (ClassCastException e) {
             throw new ClassCastException(mContext.toString() + " must implement ReadMoreFragment.OnFeedLoadListener");
         }
+        // get db instance for update RSS feeds
         rssFeedRepository = RSSFeedRepository.getInstance(AppDatabaseHelper.getInstance(mContext));
     }
 
@@ -90,6 +93,7 @@ public class ReadMoreFragment extends Fragment {
         mListRSSFeedsAdapter = new ListRSSFeedsAdapter(mContext);
         mListFeedsRecyclerView.setAdapter(mListRSSFeedsAdapter);
 
+        // Setup listener when user click Search button on keyboard
         mSearchBoxEditText.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 ViewUtils.hideKeyboard(v, mContext);
@@ -100,6 +104,7 @@ public class ReadMoreFragment extends Fragment {
             return false;
         });
 
+        // Setup listener when user pull swipe layout to refresh
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             ViewUtils.hideKeyboard(mSearchBoxEditText.getRootView(), mContext);
             mSearchBoxEditText.clearFocus();
@@ -108,52 +113,76 @@ public class ReadMoreFragment extends Fragment {
 
         // TODO: delete fixed RSS link
         mSearchBoxEditText.setText("https://vnexpress.net/rss/tin-moi-nhat.rss");
-//        mSearchBoxEditText.setText("https://techcrunch.com/feed");
+    }
+
+    // update current list
+    private void setList(List<RSSFeed> listItems) {
+        if (!listItems.isEmpty()) {
+            mTextEmpty.setVisibility(View.INVISIBLE);
+        } else {
+            mTextEmpty.setVisibility(View.VISIBLE);
+        }
+        mListRSSFeedsAdapter.setListContent(listItems);
+        // notice listener when a list of new RSS feeds is load
+        onFeedLoadListener.onFeedLoad();
     }
 
     // Perform get feed task in background thread
     private class GetFeedTask extends AsyncTask<Void, Void, ReturnObj> {
         private String urlStr;
-        private RSSFeed retRSSFeed;
+        private List<RSSFeed> retListFeeds;
+        private Context currentContext;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            currentContext = mContext;
             mSwipeRefreshLayout.setRefreshing(true);
             mSearchBoxInputLayout.setErrorEnabled(false);
+            // get input text from Search box
             urlStr = mSearchBoxEditText.getText().toString().trim();
         }
 
         @Override
         protected ReturnObj doInBackground(Void... voids) {
             if (urlStr.isEmpty()) {
-                return new ReturnObj(true, ReturnObj.TYPE.UI_ERROR,
-                        "Enter a valid url");
+                return new ReturnObj(ReturnObj.TYPE.UI_ERROR, "Please enter a valid url");
             }
 
             try {
                 urlStr = StringUtils.addHttpUrl(urlStr);
-                retRSSFeed = RSSUtils.parseRSSFeedFromURL(urlStr);
-            } catch (NetworkOnMainThreadException | XmlPullParserException | IOException e) {
-                return new ReturnObj(true, ReturnObj.TYPE.EXCEPTION,
-                        e.getMessage());
+                // try to parse RSS feed from URL using Internet
+                RSSFeed retRSSFeed = RSSUtils.parseRSSFeedFromURL(urlStr);
+                // add feed into db if get successful
+                rssFeedRepository.add(retRSSFeed);
+                retListFeeds = new ArrayList<>();
+                retListFeeds.add(retRSSFeed);
+            } catch (XmlPullParserException | IOException e) {
+                // if an exception occurs -> load list RSS feeds in db
+                // include: no Internet exception
+                retListFeeds = new ArrayList<>(rssFeedRepository.getFeed(urlStr));
+                if (!PermissionUtils.isInternetAvailable(currentContext)) {
+                    return new ReturnObj(ReturnObj.TYPE.CONNECTIVITY_EXCEPTION, "Please check your Internet connection.");
+                }
+                return new ReturnObj(ReturnObj.TYPE.ERROR_EXCEPTION, e.getMessage());
             }
-            return new ReturnObj(false);
+            return new ReturnObj();
         }
 
         @Override
-        protected void onPostExecute(ReturnObj obj) {
-            super.onPostExecute(obj);
-            if (!obj.isError()) {
-                List<RSSFeed> listRSSFeeds = new ArrayList<>();
-                listRSSFeeds.add(retRSSFeed);
-                rssFeedRepository.add(listRSSFeeds);
-                setList(listRSSFeeds);
-            } else {
-                switch (obj.getType()) {
-                    case EXCEPTION:
+        protected void onPostExecute(ReturnObj retObject) {
+            super.onPostExecute(retObject);
+            if (retObject.isError()) {
+                switch (retObject.getType()) {
+                    case CONNECTIVITY_EXCEPTION:
+                        Toast.makeText(mContext, "Loaded list RSS feeds from database successfully", Toast.LENGTH_LONG).show();
+                        // show no connection error (dialog / message)
+                        mSearchBoxInputLayout.setError(retObject.getErrorMessage());
+                        mSearchBoxInputLayout.setErrorEnabled(true);
+                        break;
+                    case ERROR_EXCEPTION:
                     case UI_ERROR:
-                        mSearchBoxInputLayout.setError(obj.getErrorMessage());
+                        mSearchBoxInputLayout.setError(retObject.getErrorMessage());
                         mSearchBoxInputLayout.setErrorEnabled(true);
                         break;
                     case NO_ERROR:
@@ -162,18 +191,9 @@ public class ReadMoreFragment extends Fragment {
                     default:
                 }
             }
+            setList(retListFeeds);
             mSwipeRefreshLayout.setRefreshing(false);
         }
-    }
-
-    private void setList(List<RSSFeed> listItems) {
-        if (!listItems.isEmpty()) {
-            mTextEmpty.setVisibility(View.INVISIBLE);
-        } else {
-            mTextEmpty.setVisibility(View.VISIBLE);
-        }
-        mListRSSFeedsAdapter.setListContent(listItems);
-        onFeedLoadListener.onFeedLoad();
     }
 
     public void onRefresh(RSSFeed feed) {

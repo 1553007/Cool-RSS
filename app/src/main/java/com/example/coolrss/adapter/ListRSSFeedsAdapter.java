@@ -20,6 +20,7 @@ import com.google.android.material.textview.MaterialTextView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -55,7 +56,6 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             final ImageView image = ((RSSFeedViewHolder) holder).image;
             final MaterialTextView time = ((RSSFeedViewHolder) holder).time;
 
-
             title.setText(currentItem.getTitle());
             link.setText(StringUtils.removeHttpInUrl(currentItem.getLink()));
             if (!currentItem.getImage().isEmpty()) {
@@ -64,10 +64,15 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         .error(R.drawable.default_image)
                         .into(image);
             } else {
-                image.setImageResource(R.drawable.default_image);
+                // set default website image
+                Picasso.get().load(StringUtils.getLogoInWebsite(currentItem.getLink()))
+                        .placeholder(R.drawable.default_image)
+                        .error(R.drawable.default_image)
+                        .into(image);
             }
             // format date time
-            String timeFormat = StringUtils.getStringNoZone(currentItem.getLastBuildDateStr());
+            Date date = StringUtils.getDateFromString(currentItem.getLastBuildDateStr());
+            String timeFormat = StringUtils.getStringNoZoneFromDate(date);
             if (timeFormat != null) {
                 time.setText("Last update: " + timeFormat);
             } else {
@@ -76,7 +81,7 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             ((RSSFeedViewHolder) holder).onFeedViewHolderClickListener = positionClicked -> {
                 // send RSS Feed data to listener
-                onFeedClickListener.onClick(listRSSFeeds.get(positionClicked));
+                onFeedClickListener.onClick(listRSSFeeds.get(positionClicked).getLink());
             };
         }
     }
@@ -123,6 +128,6 @@ public class ListRSSFeedsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     // RSS Feed clicked listener
     public interface OnFeedItemClickListener {
-        void onClick(RSSFeed rssFeed);
+        void onClick(String feedLink);
     }
 }

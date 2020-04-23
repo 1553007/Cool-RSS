@@ -91,9 +91,8 @@ public class StringUtils {
     }
 
     // generate String from date with format no Zone
-    public static String getStringNoZone(String dateStringWithZone) {
-        Date dateWithZone = getDateFromString(dateStringWithZone);
-        return dateFormat_noZone.format(dateWithZone);
+    public static String getStringNoZoneFromDate(Date date) {
+        return dateFormat_noZone.format(date);
     }
 
     // generate date from String with format

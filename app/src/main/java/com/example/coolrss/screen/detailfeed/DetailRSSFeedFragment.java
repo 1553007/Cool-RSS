@@ -1,4 +1,4 @@
-package com.example.coolrss.screen.home.detailrssfeed;
+package com.example.coolrss.screen.detailfeed;
 
 /*
  * Created by dutnguyen on 4/21/2020.
@@ -26,7 +26,9 @@ import com.example.coolrss.adapter.ListRSSItemsAdapter;
 import com.example.coolrss.dbhelper.AppDatabaseHelper;
 import com.example.coolrss.dbhelper.repository.RSSFeedRepository;
 import com.example.coolrss.model.RSSFeed;
+import com.example.coolrss.model.RSSItem;
 import com.example.coolrss.screen.home.readmore.ReadMoreFragment;
+import com.example.coolrss.utils.PermissionUtils;
 import com.example.coolrss.utils.RSSUtils;
 import com.example.coolrss.utils.ReturnObj;
 import com.example.coolrss.utils.StringUtils;
@@ -35,6 +37,7 @@ import com.google.android.material.textview.MaterialTextView;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
+import java.util.List;
 
 public class DetailRSSFeedFragment extends Fragment {
     private String LOG_TAG = ReadMoreFragment.class.getSimpleName();
@@ -45,17 +48,23 @@ public class DetailRSSFeedFragment extends Fragment {
     private ListRSSItemsAdapter mListRSSItemsAdapter;
     private RSSFeed mRSSFeed = new RSSFeed();
     private RSSFeedRepository rssFeedRepository;
-    private OnItemsLoadListener onItemsLoadListener;
+    private OnListUpdateListener onListUpdateListener;
+
+    public DetailRSSFeedFragment(String feedLink) {
+        mRSSFeed.setLink(feedLink);
+    }
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mContext = context;
+        // prepare listener when a new feed is loaded
         try {
-            onItemsLoadListener = (OnItemsLoadListener) mContext;
+            onListUpdateListener = (OnListUpdateListener) mContext;
         } catch (ClassCastException e) {
-            throw new ClassCastException(mContext.toString() + " must implement DetailRSSFeedFragment.OnItemsLoadListener");
+            throw new ClassCastException(mContext.toString() + " must implement DetailRSSFeedFragment.OnListUpdateListener");
         }
+        // get db instance for update RSS feeds
         rssFeedRepository = RSSFeedRepository.getInstance(AppDatabaseHelper.getInstance(mContext));
     }
 
@@ -83,28 +92,46 @@ public class DetailRSSFeedFragment extends Fragment {
         mListRSSItemsAdapter = new ListRSSItemsAdapter(mContext);
         mListItemsRecyclerView.setAdapter(mListRSSItemsAdapter);
 
+        // Setup listener when user pull swipe layout to refresh
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             // execute Get feed task if there is a link in RSS feed
             if (mRSSFeed != null && !mRSSFeed.getLink().isEmpty()) {
-                new GetFeedTask().execute((Void) null);
+                onRefresh();
             } else {
                 mSwipeRefreshLayout.setRefreshing(false);
             }
         });
+        onRefresh();
     }
 
-    public void onReceiveRSSFeed(RSSFeed rssFeed) {
-        setFeed(rssFeed);
+    // update current list
+    private void refreshListItems() {
+        if (mRSSFeed != null && !mRSSFeed.getLink().isEmpty()) {
+            List<RSSItem> listItems = mRSSFeed.getListRSSItems();
+            if (!listItems.isEmpty()) {
+                mTextEmpty.setVisibility(View.INVISIBLE);
+            } else {
+                mTextEmpty.setVisibility(View.VISIBLE);
+            }
+            mListRSSItemsAdapter.setListContent(listItems);
+        }
+    }
+
+    public void onRefresh() {
+        new GetFeedTask().execute((Void) null);
     }
 
     // Perform get feed task in background thread
     private class GetFeedTask extends AsyncTask<Void, Void, ReturnObj> {
         private String urlStr;
         private RSSFeed retRSSFeed = new RSSFeed();
+        private Context currentContext;
+        private boolean hasUpdate = false;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            currentContext = mContext;
             mSwipeRefreshLayout.setRefreshing(true);
             urlStr = mRSSFeed.getLink();
         }
@@ -112,28 +139,41 @@ public class DetailRSSFeedFragment extends Fragment {
         @Override
         protected ReturnObj doInBackground(Void... voids) {
             if (urlStr.isEmpty()) {
-                return new ReturnObj(true, ReturnObj.TYPE.UI_ERROR,
-                        "Enter a valid url");
+                return new ReturnObj(ReturnObj.TYPE.UI_ERROR, "Please enter a valid url");
             }
 
             try {
                 urlStr = StringUtils.addHttpUrl(urlStr);
+                // try to parse RSS feed from URL using Internet
                 retRSSFeed = RSSUtils.parseRSSFeedFromURL(urlStr);
+                // add feed into db if get successful
+                rssFeedRepository.add(retRSSFeed);
+                hasUpdate = true;
             } catch (NetworkOnMainThreadException | XmlPullParserException | IOException e) {
-                return new ReturnObj(true, ReturnObj.TYPE.EXCEPTION,
-                        e.getMessage());
+                // if an exception occurs -> load list RSS feeds in db
+                // include: no Internet exception
+                retRSSFeed = rssFeedRepository.getFeed(urlStr).get(0);
+                if (!PermissionUtils.isInternetAvailable(currentContext)) {
+                    return new ReturnObj(ReturnObj.TYPE.CONNECTIVITY_EXCEPTION, "Please check your Internet connection.");
+                }
+                return new ReturnObj(ReturnObj.TYPE.ERROR_EXCEPTION, e.getMessage());
             }
-            return new ReturnObj(false);
+            return new ReturnObj();
         }
 
         @Override
-        protected void onPostExecute(ReturnObj obj) {
-            super.onPostExecute(obj);
-            if (obj.isError()) {
-                switch (obj.getType()) {
-                    case EXCEPTION:
+        protected void onPostExecute(ReturnObj retObject) {
+            super.onPostExecute(retObject);
+            if (retObject.isError()) {
+                switch (retObject.getType()) {
+                    case CONNECTIVITY_EXCEPTION:
+                        // show no connection error (dialog / message)
+                        Toast.makeText(mContext, retObject.getErrorMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, "Loaded list RSS feeds from database successfully", Toast.LENGTH_LONG).show();
+                        break;
+                    case ERROR_EXCEPTION:
                     case UI_ERROR:
-                        Toast.makeText(mContext, obj.getErrorMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, retObject.getErrorMessage(), Toast.LENGTH_SHORT).show();
                         break;
                     case NO_ERROR:
 
@@ -141,28 +181,17 @@ public class DetailRSSFeedFragment extends Fragment {
                     default:
                 }
             }
-            setFeed(retRSSFeed);
+            if (hasUpdate) {
+                onListUpdateListener.onListUpdate();
+            }
+            mRSSFeed = retRSSFeed;
+            refreshListItems();
             mSwipeRefreshLayout.setRefreshing(false);
         }
     }
 
-    private void setFeed(RSSFeed feed) {
-        if (feed != null && !feed.getLink().isEmpty()) {
-            mRSSFeed = feed;
-            if (!mRSSFeed.getListRSSItems().isEmpty()) {
-                mTextEmpty.setVisibility(View.INVISIBLE);
-            } else {
-                mTextEmpty.setVisibility(View.VISIBLE);
-            }
-            mListRSSItemsAdapter.setListContent(mRSSFeed.getListRSSItems());
-            onItemsLoadListener.onListItemsLoad(mRSSFeed);
-            //TODO: update RSS Feed last build date
-            //TODO: add RSS list Items
-        }
-    }
-
-    // list RSS Items new load listener
-    public interface OnItemsLoadListener {
-        void onListItemsLoad(RSSFeed feed);
+    // RSS Items updated
+    public interface OnListUpdateListener {
+        void onListUpdate();
     }
 }

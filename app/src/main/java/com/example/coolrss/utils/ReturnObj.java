@@ -5,30 +5,27 @@ package com.example.coolrss.utils;
  */
 
 public class ReturnObj {
-    public static enum TYPE {
+    public enum TYPE {
         UI_ERROR,
-        EXCEPTION,
+        ERROR_EXCEPTION,
+        CONNECTIVITY_EXCEPTION,
         NO_ERROR
     }
-
-    private Boolean isError;
     private TYPE type;
     private String errorMessage;
 
-    public ReturnObj(Boolean isError) {
-        this.isError = isError;
+    public ReturnObj() {
         this.type = TYPE.NO_ERROR;
         this.errorMessage = "";
     }
 
-    public ReturnObj(Boolean isError, TYPE type, String errorMessage) {
-        this.isError = isError;
+    public ReturnObj(TYPE type, String errorMessage) {
         this.type = type;
         this.errorMessage = errorMessage;
     }
 
     public Boolean isError() {
-        return isError;
+        return type != TYPE.NO_ERROR;
     }
 
     public TYPE getType() {

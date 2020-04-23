@@ -66,7 +66,6 @@ public class RSSFeedRepository {
                 values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE, dateSQLStrOfFeed);
                 long retId = db.insert(AppDatabaseHelper.RSSFeedTable.TABLE_NAME, null, values);
                 if (retId != -1) {
-                    // TODO: add list
                     isSuccess = true;
                     RSSItemRepository repository = RSSItemRepository.getInstance((AppDatabaseHelper) sqLiteOpenHelper);
                     repository.add(feed.getListRSSItems(), Long.toString(retId));
@@ -98,7 +97,6 @@ public class RSSFeedRepository {
             values.put(AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE, dateSQLStrOfFeed);
 
             db.update(AppDatabaseHelper.RSSFeedTable.TABLE_NAME, values, AppDatabaseHelper.RSSFeedTable.COLUMN_ID + " = ?", new String[]{Integer.toString(rowId)});
-            // TODO: add list
             RSSItemRepository repository = RSSItemRepository.getInstance((AppDatabaseHelper) sqLiteOpenHelper);
             repository.add(feed.getListRSSItems(), Integer.toString(rowId));
             db.setTransactionSuccessful();
@@ -113,7 +111,7 @@ public class RSSFeedRepository {
         try {
             String query = "SELECT * FROM " + AppDatabaseHelper.RSSFeedTable.TABLE_NAME +
                     " WHERE " + AppDatabaseHelper.RSSFeedTable.COLUMN_LINK + " = ?" +
-                    " AND " + AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE + " <= ?";
+                    " AND " + AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE + " <= ?;";
 
             // convert date from Object format to SQL format
             String dateStrOfFeed = feed.getLastBuildDateStr();
@@ -136,55 +134,28 @@ public class RSSFeedRepository {
     public List<RSSFeed> getAll() {
         List<RSSFeed> listFeeds = new ArrayList<>();
         SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
-        String query = "SELECT * FROM " + AppDatabaseHelper.RSSFeedTable.TABLE_NAME +
-                " ORDER BY " + AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE + " DESC";
-        Cursor cursor = db.rawQuery(query, null);
-        if (cursor.getCount() <= 0) {
-            cursor.close();
-            return listFeeds;
-        }
-        if (cursor.moveToFirst()) {
-            do {
-                RSSFeed feed = null;
-                feed = getFeedFromCursor(cursor);
-                if (feed != null)
-                    listFeeds.add(feed);
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        return listFeeds;
-    }
 
-    public boolean isEmpty() {
-        SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
-        try {
-            String query = "SELECT * FROM " + AppDatabaseHelper.RSSFeedTable.TABLE_NAME;
-            Cursor cursor = db.rawQuery(query, null);
-            if (cursor.moveToFirst()) {
-                cursor.close();
-                return false;
-            }
-            cursor.close();
-        } catch (Exception e) {
-            Log.e(RSS_FEED_REPOSITORY_TAG, "Exception " + e.getMessage(), e);
-        }
-        return true;
-    }
-
-    public RSSFeed getFeed(String link) {
-        SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
         try {
             String query = "SELECT * FROM " + AppDatabaseHelper.RSSFeedTable.TABLE_NAME +
-                    " WHERE " + AppDatabaseHelper.RSSFeedTable.COLUMN_LINK + " = ?";
-            Cursor cursor = db.rawQuery(query, new String[]{link});
+                    " ORDER BY " + AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE + " DESC;";
+            Cursor cursor = db.rawQuery(query, null);
+            if (cursor.getCount() <= 0) {
+                cursor.close();
+                return listFeeds;
+            }
             if (cursor.moveToFirst()) {
-                return getFeedFromCursor(cursor);
+                do {
+                    RSSFeed feed = null;
+                    feed = getFeedFromCursor(cursor);
+                    if (feed != null)
+                        listFeeds.add(feed);
+                } while (cursor.moveToNext());
             }
             cursor.close();
         } catch (Exception e) {
             Log.e(RSS_FEED_REPOSITORY_TAG, "Exception " + e.getMessage(), e);
         }
-        return null;
+        return listFeeds;
     }
 
     private RSSFeed getFeedFromCursor(Cursor cursor) {
@@ -205,9 +176,53 @@ public class RSSFeedRepository {
 
         // convert date from SQL format to Object format
         Date dateOfFeed = StringUtils.getDateFromSQLString(dateValue);
-        String dateStrOfFeed = StringUtils.getSQLStringFromDate(dateOfFeed);
+        String dateStrOfFeed = StringUtils.getStringFromDate(dateOfFeed);
         feed.setLastBuildDate(dateStrOfFeed);
         feed.setListRSSItems(listItems);
         return feed;
     }
+
+    public List<RSSFeed> getFeed(String link) {
+        List<RSSFeed> listFeeds = new ArrayList<>();
+        SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
+        try {
+            String query = "SELECT * FROM " + AppDatabaseHelper.RSSFeedTable.TABLE_NAME +
+                    " WHERE " + AppDatabaseHelper.RSSFeedTable.COLUMN_LINK + " = ?" +
+                    " ORDER BY " + AppDatabaseHelper.RSSFeedTable.COLUMN_LAST_BUILD_DATE + " DESC;";
+            Cursor cursor = db.rawQuery(query, new String[]{link});
+            if (cursor.getCount() <= 0) {
+                cursor.close();
+                return listFeeds;
+            }
+            if (cursor.moveToFirst()) {
+                do {
+                    RSSFeed feed = null;
+                    feed = getFeedFromCursor(cursor);
+                    if (feed != null)
+                        listFeeds.add(feed);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            Log.e(RSS_FEED_REPOSITORY_TAG, "Exception " + e.getMessage(), e);
+        }
+        return listFeeds;
+    }
+
+    public boolean isEmpty() {
+        SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
+        try {
+            String query = "SELECT * FROM " + AppDatabaseHelper.RSSFeedTable.TABLE_NAME + ";";
+            Cursor cursor = db.rawQuery(query, null);
+            if (cursor.moveToFirst()) {
+                cursor.close();
+                return false;
+            }
+            cursor.close();
+        } catch (Exception e) {
+            Log.e(RSS_FEED_REPOSITORY_TAG, "Exception " + e.getMessage(), e);
+        }
+        return true;
+    }
+
 }

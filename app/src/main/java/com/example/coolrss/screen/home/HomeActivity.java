@@ -4,6 +4,7 @@ package com.example.coolrss.screen.home;
  * Created by dutnguyen on 4/17/2020.
  */
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
@@ -15,21 +16,20 @@ import androidx.viewpager.widget.ViewPager;
 import com.example.coolrss.R;
 import com.example.coolrss.adapter.ListRSSFeedsAdapter;
 import com.example.coolrss.adapter.TabAdapter;
-import com.example.coolrss.model.RSSFeed;
-import com.example.coolrss.screen.home.detailrssfeed.DetailRSSFeedFragment;
+import com.example.coolrss.screen.detailfeed.DetailFeedActivity;
 import com.example.coolrss.screen.home.history.HistoryFragment;
 import com.example.coolrss.screen.home.readmore.ReadMoreFragment;
 import com.google.android.material.tabs.TabLayout;
 
-public class HomeActivity extends AppCompatActivity implements ListRSSFeedsAdapter.OnFeedItemClickListener,
-        ReadMoreFragment.OnFeedLoadListener, DetailRSSFeedFragment.OnItemsLoadListener {
+public class HomeActivity extends AppCompatActivity
+        implements ListRSSFeedsAdapter.OnFeedItemClickListener, ReadMoreFragment.OnFeedLoadListener {
     private String LOG_TAG = HomeActivity.class.getSimpleName();
+    public static final int OPEN_DETAIL_FEED_ACTIVITY = 1412;
     private Toolbar mToolbar;
     private TabAdapter mTabAdapter;
     private TabLayout mTabLayout;
     private ViewPager mViewPager;
     private ReadMoreFragment mReadMoreFragment;
-    private DetailRSSFeedFragment mDetailRSSFeedFragment;
     private HistoryFragment mHistoryFragment;
 
     @Override
@@ -52,14 +52,43 @@ public class HomeActivity extends AppCompatActivity implements ListRSSFeedsAdapt
         mTabAdapter = new TabAdapter(getSupportFragmentManager(), FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
         mReadMoreFragment = new ReadMoreFragment();
         mTabAdapter.addFragment(mReadMoreFragment, "Read more");
-        mDetailRSSFeedFragment = new DetailRSSFeedFragment();
-        mTabAdapter.addFragment(mDetailRSSFeedFragment, "Detail");
         mHistoryFragment = new HistoryFragment();
         mTabAdapter.addFragment(mHistoryFragment, "History");
 
         mViewPager.setAdapter(mTabAdapter);
-        mViewPager.setOffscreenPageLimit(3);
+        mViewPager.setOffscreenPageLimit(2);
         mTabLayout.setupWithViewPager(mViewPager);
+    }
+
+    // setup listener when a new RSS feed loaded
+    // update History tab
+    @Override
+    public void onFeedLoad() {
+        mHistoryFragment.onRefresh();
+    }
+
+    // setup listener when a RSS Feed clicked
+    // navigate to Detail RSS Feed Screen
+    @Override
+    public void onClick(String feedLink) {
+        Intent intent = new Intent(HomeActivity.this, DetailFeedActivity.class);
+        intent.putExtra("DETAIL_FEED_LINK", feedLink);
+        startActivityForResult(intent, OPEN_DETAIL_FEED_ACTIVITY);
+    }
+
+    // handle on back from Detail Activity
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == OPEN_DETAIL_FEED_ACTIVITY) {
+            if (resultCode == RESULT_OK) {
+                boolean isFeedUpdated = data.getBooleanExtra("isFeedUpdated", false);
+                if (isFeedUpdated) {
+                    // update "Last update" information in RSS feed has updated
+                    mHistoryFragment.onRefresh();
+                }
+            }
+        }
     }
 
     @Override
@@ -70,28 +99,5 @@ public class HomeActivity extends AppCompatActivity implements ListRSSFeedsAdapt
         } else {
             super.onBackPressed();
         }
-    }
-
-    // TODO: navigate to Detail RSS Feed Screen : temp
-    // setup listener when a RSS item clicked
-    // navigate to Detail RSS Feed Screen
-    @Override
-    public void onClick(RSSFeed rssFeed) {
-        mViewPager.setCurrentItem(1);
-        mDetailRSSFeedFragment.onReceiveRSSFeed(rssFeed);
-    }
-
-    // setup listener when a new RSS feed loaded
-    // update History tab
-    @Override
-    public void onFeedLoad() {
-        mHistoryFragment.onRefresh();
-    }
-
-    // setup listener when a list of new RSS Items in RSS Feed loaded
-    // update list RSS Feed in Read more tab
-    @Override
-    public void onListItemsLoad(RSSFeed feed) {
-        mReadMoreFragment.onRefresh(feed);
     }
 }

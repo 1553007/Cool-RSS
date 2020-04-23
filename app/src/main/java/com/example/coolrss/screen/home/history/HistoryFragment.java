@@ -5,6 +5,7 @@ package com.example.coolrss.screen.home.history;
  */
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,8 +25,10 @@ import com.example.coolrss.dbhelper.AppDatabaseHelper;
 import com.example.coolrss.dbhelper.repository.RSSFeedRepository;
 import com.example.coolrss.model.RSSFeed;
 import com.example.coolrss.screen.home.readmore.ReadMoreFragment;
+import com.example.coolrss.utils.ReturnObj;
 import com.google.android.material.textview.MaterialTextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class HistoryFragment extends Fragment {
@@ -41,6 +44,7 @@ public class HistoryFragment extends Fragment {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mContext = context;
+        // get db instance for update RSS feeds
         rssFeedRepository = RSSFeedRepository.getInstance(AppDatabaseHelper.getInstance(mContext));
     }
 
@@ -68,12 +72,12 @@ public class HistoryFragment extends Fragment {
         mListRSSFeedsAdapter = new ListRSSFeedsAdapter(mContext);
         mListFeedsRecyclerView.setAdapter(mListRSSFeedsAdapter);
 
-        mSwipeRefreshLayout.setOnRefreshListener(() -> {
-            mSwipeRefreshLayout.setRefreshing(false);
-        });
+        // Setup listener when user pull swipe layout to refresh
+        mSwipeRefreshLayout.setOnRefreshListener(this::onRefresh);
         onRefresh();
     }
 
+    // update current list
     private void setList(List<RSSFeed> listItems) {
         if (!listItems.isEmpty()) {
             mTextEmpty.setVisibility(View.INVISIBLE);
@@ -84,7 +88,45 @@ public class HistoryFragment extends Fragment {
     }
 
     public void onRefresh() {
-        List<RSSFeed> listFeeds = rssFeedRepository.getAll();
-        setList(listFeeds);
+        new GetFeedTask().execute((Void) null);
+    }
+
+    // Perform get feed task in background thread
+    private class GetFeedTask extends AsyncTask<Void, Void, ReturnObj> {
+        private List<RSSFeed> retListFeeds;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mSwipeRefreshLayout.setRefreshing(true);
+        }
+
+        @Override
+        protected ReturnObj doInBackground(Void... voids) {
+            // get list of all RSS feeds accessed from db
+            retListFeeds = new ArrayList<>(rssFeedRepository.getAll());
+            return new ReturnObj();
+        }
+
+        @Override
+        protected void onPostExecute(ReturnObj returnObj) {
+            super.onPostExecute(returnObj);
+            if (!returnObj.isError()) {
+                setList(retListFeeds);
+            } else {
+                switch (returnObj.getType()) {
+                    case ERROR_EXCEPTION:
+                        // handle exception error
+                    case UI_ERROR:
+                        // show error message
+                        break;
+                    case NO_ERROR:
+
+                        break;
+                    default:
+                }
+            }
+            mSwipeRefreshLayout.setRefreshing(false);
+        }
     }
 }

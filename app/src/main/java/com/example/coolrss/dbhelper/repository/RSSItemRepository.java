@@ -35,12 +35,12 @@ public class RSSItemRepository {
     }
 
     public List<RSSItem> getListItems(String feedId) {
-        // TODO: getListItems
         List<RSSItem> listItems = new ArrayList<>();
         SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
         String query = "SELECT * FROM " + AppDatabaseHelper.RSSItemTable.TABLE_NAME +
                 " WHERE " + AppDatabaseHelper.RSSItemTable.COLUMN_RSS_FEED_ID + " = ?" +
-                " ORDER BY " + AppDatabaseHelper.RSSItemTable.COLUMN_PUBLIC_DATE + " DESC";
+                " ORDER BY " + AppDatabaseHelper.RSSItemTable.COLUMN_PUBLIC_DATE + " DESC" +
+                " LIMIT " + AppDatabaseHelper.RSSItemTable.LIMIT_RECORDS + ";";
         Cursor cursor = db.rawQuery(query, new String[]{feedId});
         if (cursor.getCount() <= 0) {
             cursor.close();
@@ -90,7 +90,6 @@ public class RSSItemRepository {
                 values.put(AppDatabaseHelper.RSSItemTable.COLUMN_RSS_FEED_ID, feedId);
                 long retId = db.insert(AppDatabaseHelper.RSSItemTable.TABLE_NAME, null, values);
                 if (retId != -1) {
-                    // TODO: add list
                     isSuccess = true;
                 }
             }
@@ -132,7 +131,7 @@ public class RSSItemRepository {
         SQLiteDatabase db = sqLiteOpenHelper.getReadableDatabase();
         try {
             String query = "SELECT * FROM " + AppDatabaseHelper.RSSItemTable.TABLE_NAME +
-                    " WHERE " + AppDatabaseHelper.RSSItemTable.COLUMN_LINK + " = ?";
+                    " WHERE " + AppDatabaseHelper.RSSItemTable.COLUMN_LINK + " = ?;";
             Cursor cursor = db.rawQuery(query, new String[]{item.getLink()});
             if (cursor.moveToFirst()) {
                 String idValue = cursor.getString(cursor.getColumnIndex(AppDatabaseHelper.RSSItemTable.COLUMN_ID));
